@@ -165,7 +165,7 @@ public class DynamoService {
 
     	ItemCollection<QueryOutcome> items = table.query(spec);
     	
-    	String jsonString = getJson(items);
+    	String jsonString = getKeysAsJson(items, tableDetails);
     	
     	return jsonString;
     }
@@ -249,6 +249,40 @@ public class DynamoService {
             if (item != null) {
                 Map nodes = item.asMap();
                 tmp.append(getJson(nodes)).append(",");
+            }
+    	}
+    	if (tmp.length() > 10) {
+    		tmp = tmp.deleteCharAt(tmp.length()-1).append("]");
+    		jsonString = tmp.toString();
+    	}
+    	
+    	return jsonString;
+    }
+    
+    /**
+     * convert DynamodDB Items list into JSON
+     * get only keys from item
+     * @param items
+     * @param tableDetails
+     * @return
+     * @throws JsonProcessingException
+     */
+    private String getKeysAsJson (ItemCollection<QueryOutcome> items, DynamoTable tableDetails) throws JsonProcessingException {
+    	Iterator<Item> iterator = items.iterator();
+    	Item item = null;
+    	String jsonString = null;
+    	StringBuffer tmp = new StringBuffer("[");
+    	
+    	while (iterator.hasNext()) {
+    		
+    	    item = iterator.next();
+    	    logger.debug("item : " + item); 
+            if (item != null) {
+                Map nodes = item.asMap();
+                Map<String, Object> keys = new HashMap<String, Object>();
+                keys.put(tableDetails.getTablePKName(), nodes.get(tableDetails.getTablePKName()));
+                keys.put(tableDetails.getTableSKName(), nodes.get(tableDetails.getTableSKName()));
+                tmp.append(getJson(keys)).append(",");
             }
     	}
     	if (tmp.length() > 10) {
