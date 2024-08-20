@@ -12,14 +12,12 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
 	
 	private Logger logger = LogManager.getLogger(LambdaFunctionHandler.class);
-	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-	private DynamoService dynamoService;
+	public DynamoService dynamoService;
 
     public LambdaFunctionHandler() {
     	dynamoService = DynamoService.build();
@@ -27,7 +25,9 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
     }
 
     // Test purpose only.
-    LambdaFunctionHandler(DynamoService dynSrv) {}
+    public LambdaFunctionHandler(DynamoService dynamoSrv) {
+    	dynamoService = dynamoSrv;
+    }
 
     @Override
     public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {

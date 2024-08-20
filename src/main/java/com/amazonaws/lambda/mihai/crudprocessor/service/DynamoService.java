@@ -62,7 +62,7 @@ public class DynamoService {
     	Map nodes = getKeysInJson(jsonData);
     	logger.debug("nodes: " + Arrays.toString(nodes.entrySet().toArray()));
 
-        Table table = dynamoClient.getTable(tableDetails.getTableName());
+        Table table = getDynamoClient().getTable(tableDetails.getTableName());
                 
         PrimaryKey itemKey = new PrimaryKey();
         itemKey.addComponent(tableDetails.getTablePKName(), nodes.get(tableDetails.getTablePKName()));
@@ -124,11 +124,11 @@ public class DynamoService {
      * @return
      * @throws Exception
      */
-    public String readPrimaryKeyRecord(DynamoTable tableDetails) throws Exception {
+    private String readPrimaryKeyRecord(DynamoTable tableDetails) throws Exception {
     	
-    	logger.debug("table: " + tableDetails);
+    	logger.debug("readPrimaryKeyRecord table: " + tableDetails);
 
-        Table table = dynamoClient.getTable(tableDetails.getTableName());
+        Table table = getDynamoClient().getTable(tableDetails.getTableName());
                 
         PrimaryKey itemKey = new PrimaryKey();
         itemKey.addComponent(tableDetails.getTablePKName(), tableDetails.getTablePKValue());
@@ -156,9 +156,11 @@ public class DynamoService {
      * @return
      * @throws Exception
      */
-    public String readPartitionKeyRecords(DynamoTable tableDetails) throws Exception {
+    private String readPartitionKeyRecords(DynamoTable tableDetails) throws Exception {
     	
-    	Table table = dynamoClient.getTable(tableDetails.getTableName());
+    	logger.debug("readPartitionKeyRecords table: " + tableDetails);
+    	
+    	Table table = getDynamoClient().getTable(tableDetails.getTableName());
 
     	QuerySpec spec = new QuerySpec()
     			.withHashKey(tableDetails.getTablePKName(), tableDetails.getTablePKValue());
@@ -188,7 +190,7 @@ public class DynamoService {
     public void deleteRecord(DynamoTable tableDetails) throws Exception {
     	logger.debug("table: " + tableDetails);
 
-        Table table = dynamoClient.getTable(tableDetails.getTableName());
+        Table table = getDynamoClient().getTable(tableDetails.getTableName());
                 
         PrimaryKey itemKey = new PrimaryKey();
         itemKey.addComponent(tableDetails.getTablePKName(), tableDetails.getTablePKValue());
@@ -206,7 +208,7 @@ public class DynamoService {
      * @throws JsonMappingException
      * @throws JsonProcessingException
      */
-    private Map<String, String> getKeysInJson(String json) throws JsonMappingException, JsonProcessingException {
+    public static Map<String, String> getKeysInJson(String json) throws JsonMappingException, JsonProcessingException {
 
         Map<String, String> nodes = new HashMap<String, String>();
         JsonNode jsonNode = OBJECT_MAPPER.readTree(json);
@@ -268,7 +270,12 @@ public class DynamoService {
      * @throws JsonProcessingException
      */
     private String getKeysAsJson (ItemCollection<QueryOutcome> items, DynamoTable tableDetails) throws JsonProcessingException {
-    	Iterator<Item> iterator = items.iterator();
+    	
+    	if (items.firstPage().hasNextPage()) throw new RuntimeException("multiple pages NOT implemented !!!");
+    	
+    	Iterator<Item> iterator = items.firstPage().getLowLevelResult().getItems().listIterator();
+    	
+//    	Iterator<Item> iterator = items.iterator();
     	Item item = null;
     	String jsonString = null;
     	StringBuffer tmp = new StringBuffer("[");

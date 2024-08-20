@@ -1,0 +1,47 @@
+{
+    "version": "2.0",
+    "routeKey": "GET /bloodpressure",
+    "rawPath": "/bloodpressure",
+    "rawQueryString": "pk=person&sk=dt&table=BloodPressure&person=Mihai&dt=2024-10-11%2012:24:25",
+    "headers": {
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br",
+        "cache-control": "no-cache",
+        "content-length": "117",
+        "content-type": "application/json",
+        "host": "yv2uzd6le6.execute-api.us-east-2.amazonaws.com",
+        "postman-token": "0e79fc3f-361f-40ac-bd96-6f5e5e186b6a",
+        "user-agent": "PostmanRuntime/7.26.8",
+        "x-amzn-trace-id": "Root=1-66bb3d31-6d827d71100f01a05435fd6c",
+        "x-forwarded-for": "78.97.133.32",
+        "x-forwarded-port": "443",
+        "x-forwarded-proto": "https"
+    },
+    "queryStringParameters": {
+        "dt": "2024-10-11 12:24:25",
+        "person": "Mihai",
+        "pk": "person",
+        "sk": "dt",
+        "table": "BloodPressure"
+    },
+    "requestContext": {
+        "accountId": "255864408802",
+        "apiId": "yv2uzd6le6",
+        "domainName": "yv2uzd6le6.execute-api.us-east-2.amazonaws.com",
+        "domainPrefix": "yv2uzd6le6",
+        "http": {
+            "method": "GET",
+            "path": "/bloodpressure",
+            "protocol": "HTTP/1.1",
+            "sourceIp": "78.97.133.32",
+            "userAgent": "PostmanRuntime/7.26.8"
+        },
+        "requestId": "ccZ_yjQkCYcEJjA=",
+        "routeKey": "GET /bloodpressure",
+        "stage": "$default",
+        "time": "13/Aug/2024:11:02:09 +0000",
+        "timeEpoch": 1723546929563
+    },
+    "body": "{\r\n    \"person\":\"Mihai\",\r\n    \"dt\":\"2024-10-11 12:24:25\",\r\n    \"temp\":55,\r\n    \"unit\":\"C\",\r\n    \"cmnt\":\"cold skin\"\r\n}",
+    "isBase64Encoded": false
+}

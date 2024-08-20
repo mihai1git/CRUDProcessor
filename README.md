@@ -51,4 +51,5 @@ The CRUD Processor could be invoked from Postman with simple URLs or with URL an
 - Use DynamoDb Basic/JSON Client to communicate with DynamoDB
 - Same Lambda is used as integration for multiple API Gateway routes  
 - Deploy of AWS Lambda Function is done from the build process configured in pom.xml 
-
+- Intercept Lambda events using Lambda internal extension mechanism (using built-in java Instrumentation) deployed in Lambda Layer (see api-gateway.event.get.json)
+- Use Mockito & MockitoHamcrest test frameworks to mock AWS DynamoDB client
