@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.IOException;
 import java.util.Map;
 
+import org.aspectj.lang.Aspects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import com.amazonaws.lambda.mihai.crudprocessor.aspect.TracingAspect;
 import com.amazonaws.lambda.mihai.crudprocessor.handler.LambdaFunctionHandler;
 import com.amazonaws.lambda.mihai.crudprocessor.service.DynamoService;
 import com.amazonaws.lambda.mihai.crudprocessor.test.data.DynamoData;
@@ -54,6 +56,9 @@ public class LambdaFunctionHandlerTest {
     public void setUp() throws IOException {
        
     	DynamoData.resetDynamoData(dynamoClient);
+    	
+    	//TracingAspect aspect = Aspects.aspectOf(TracingAspect.class);
+    	
     }
 
     private Context createContext() {
@@ -63,6 +68,7 @@ public class LambdaFunctionHandlerTest {
 
         return ctx;
     }
+    
     @Test
     @DisplayName("Ensure correct PrimaryKey HTTP GET")
     public void testLambdaFunctionGetPrimaryKey() throws IOException {
@@ -73,9 +79,7 @@ public class LambdaFunctionHandlerTest {
     	Map<String, String> jsonItemMap = DynamoData.getBloodPressurePrototypeItem ();
 	    
 	    DynamoData.addBloodPressureItem(jsonItemMap);
-    	
-//    	System.out.println(handler.dynamoService.getDynamoClient());
-    	
+    	    	
     	APIGatewayV2HTTPResponse response = handler.handleRequest(event, createContext());
     	
     	System.out.println("TEST RESP: " + response);
@@ -118,23 +122,74 @@ public class LambdaFunctionHandlerTest {
     	assertEquals(3, jsonNode.size(), "3 items were added");
     }
     
-
+    @Test
     @DisplayName("Ensure correct HTTP PUT")
+    public void testLambdaFunctionPut () throws IOException {
+    	
+    	APIGatewayV2HTTPEvent eventPut = TestUtils.parse("/api-gateway.event.put.json", APIGatewayV2HTTPEvent.class);
+    	assertEquals("2024-10-11 12:24:25", DynamoService.getKeysInJson(eventPut.getBody()).get("dt"));
+    	    	
+    	APIGatewayV2HTTPResponse response = handler.handleRequest(eventPut, createContext());
+    	System.out.println("TEST RESP: " + response);
+    	assertEquals("success create", DynamoService.getKeysInJson(response.getBody()).get("result"));
+
+    	APIGatewayV2HTTPEvent eventGet = TestUtils.parse("/api-gateway.event.get.json", APIGatewayV2HTTPEvent.class);
+    	response = handler.handleRequest(eventGet, createContext());
+    	System.out.println("TEST RESP: " + response);
+    	assertEquals("2024-10-11 12:24:25", DynamoService.getKeysInJson(eventPut.getBody()).get("dt"));
+    	
+    	//check duplicate exception on create    	
+    	response = handler.handleRequest(eventPut, createContext());
+    	System.out.println("TEST RESP: " + response);
+    	assertEquals("record was not created", DynamoService.getKeysInJson(response.getBody()).get("result"));
+    }
+    
+    @Test
+    @DisplayName("Ensure correct HTTP POST")
     public void testLambdaFunctionPost () throws IOException {
     	
-    	APIGatewayV2HTTPEvent event = TestUtils.parse("/api-gateway.event.put.json", APIGatewayV2HTTPEvent.class);
+    	APIGatewayV2HTTPEvent eventPut = TestUtils.parse("/api-gateway.event.put.json", APIGatewayV2HTTPEvent.class);
+    	assertEquals("Mihai", DynamoService.getKeysInJson(eventPut.getBody()).get("person"));
+    	assertEquals("2024-10-11 12:24:25", DynamoService.getKeysInJson(eventPut.getBody()).get("dt"));
     	    	
-    	APIGatewayV2HTTPResponse response = handler.handleRequest(event, createContext());
-    	
+    	APIGatewayV2HTTPResponse response = handler.handleRequest(eventPut, createContext());
     	System.out.println("TEST RESP: " + response);
+    	assertEquals("success create", DynamoService.getKeysInJson(response.getBody()).get("result"));
 
-    	event = TestUtils.parse("/api-gateway.event.get.json", APIGatewayV2HTTPEvent.class);
-    	//System.out.println(event);
-    		    
-    	response = handler.handleRequest(event, createContext());
+    	APIGatewayV2HTTPEvent eventPost = TestUtils.parse("/api-gateway.event.post.json", APIGatewayV2HTTPEvent.class);
+    	assertEquals("Mihai", DynamoService.getKeysInJson(eventPost.getBody()).get("person"));
+    	assertEquals("2024-10-11 12:24:25", DynamoService.getKeysInJson(eventPost.getBody()).get("dt"));
     	
+    	response = handler.handleRequest(eventPost, createContext());
     	System.out.println("TEST RESP: " + response);
-    	
+    	assertEquals("success update", DynamoService.getKeysInJson(response.getBody()).get("result"));
     }
 
+    @Test
+    @DisplayName("Ensure correct HTTP DELETE")
+    public void testLambdaFunctionDelete () throws IOException {
+    	Map<String, String> jsonItemMap = DynamoData.getBloodPressurePrototypeItem ();
+	    
+	    DynamoData.addBloodPressureItem(jsonItemMap);
+	    
+    	APIGatewayV2HTTPEvent eventGet = TestUtils.parse("/api-gateway.event.get.json", APIGatewayV2HTTPEvent.class);
+    	assertEquals("Mihai", DynamoService.getKeysInJson(eventGet.getBody()).get("person"));
+    	assertEquals("2024-10-11 12:24:25", DynamoService.getKeysInJson(eventGet.getBody()).get("dt"));
+    	
+    	APIGatewayV2HTTPResponse response = handler.handleRequest(eventGet, createContext());
+    	System.out.println("TEST RESP: " + response);
+    	assertEquals("2024-10-11 12:24:25", DynamoService.getKeysInJson(response.getBody()).get("dt"));
+    	
+    	APIGatewayV2HTTPEvent eventDelete = TestUtils.parse("/api-gateway.event.delete.json", APIGatewayV2HTTPEvent.class);
+    	assertEquals("Mihai", DynamoService.getKeysInJson(eventDelete.getBody()).get("person"));
+    	assertEquals("2024-10-11 12:24:25", DynamoService.getKeysInJson(eventDelete.getBody()).get("dt"));
+    	
+    	response = handler.handleRequest(eventDelete, createContext());
+    	System.out.println("TEST RESP: " + response);
+    	assertEquals("success delete", DynamoService.getKeysInJson(response.getBody()).get("result"));
+    	    	
+    	response = handler.handleRequest(eventGet, createContext());
+    	System.out.println("TEST RESP: " + response);
+    	assertEquals("there is no such item", DynamoService.getKeysInJson(response.getBody()).get("result"));
+    }
 }

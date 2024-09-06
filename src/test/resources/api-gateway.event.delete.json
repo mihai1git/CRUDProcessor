@@ -1,6 +1,6 @@
 {
     "version": "2.0",
-    "routeKey": "PUT /bloodpressure",
+    "routeKey": "DELETE /bloodpressure",
     "rawPath": "/bloodpressure",
     "rawQueryString": "pk=person&sk=dt&table=BloodPressure&person=Mihai&dt=2024-10-11%2012:24:25",
     "headers": {
@@ -10,9 +10,9 @@
         "content-length": "127",
         "content-type": "application/json",
         "host": "yv2uzd6le6.execute-api.us-east-2.amazonaws.com",
-        "postman-token": "d13a27e1-c9d9-4e5a-8312-1bd1b2597976",
+        "postman-token": "b8c98e3c-92bf-4f7a-b0da-58162a698be4",
         "user-agent": "PostmanRuntime/7.26.8",
-        "x-amzn-trace-id": "Root=1-66c4b4c8-42c0720b300863c814cecda8",
+        "x-amzn-trace-id": "Root=1-66daeb19-288c614652f0ce3c2c9e0a4b",
         "x-forwarded-for": "78.97.133.32",
         "x-forwarded-port": "443",
         "x-forwarded-proto": "https"
@@ -30,18 +30,18 @@
         "domainName": "yv2uzd6le6.execute-api.us-east-2.amazonaws.com",
         "domainPrefix": "yv2uzd6le6",
         "http": {
-            "method": "PUT",
+            "method": "DELETE",
             "path": "/bloodpressure",
             "protocol": "HTTP/1.1",
             "sourceIp": "78.97.133.32",
             "userAgent": "PostmanRuntime/7.26.8"
         },
-        "requestId": "c0EvZgxYCYcEPOA=",
-        "routeKey": "PUT /bloodpressure",
+        "requestId": "drmsEhEZiYcEJ9w=",
+        "routeKey": "DELETE /bloodpressure",
         "stage": "$default",
-        "time": "20/Aug/2024:15:22:48 +0000",
-        "timeEpoch": 1724167368600
+        "time": "06/Sep/2024:11:44:25 +0000",
+        "timeEpoch": 1725623065727
     },
-    "body": "{\r\n    \"person\":\"Mihai\",\r\n    \"dt\":\"2024-08-20 12:24:25\",\r\n    \"temp\":65,\r\n    \"unit\":\"C\",\r\n    \"cmnt\":\"cold in the morning\"\r\n}",
+    "body": "{\r\n    \"person\":\"Mihai\",\r\n    \"dt\":\"2024-10-11 12:24:25\",\r\n    \"temp\":65,\r\n    \"unit\":\"C\",\r\n    \"cmnt\":\"cold in the morning\"\r\n}",
     "isBase64Encoded": false
 }

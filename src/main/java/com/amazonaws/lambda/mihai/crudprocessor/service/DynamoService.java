@@ -8,6 +8,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.amazonaws.lambda.mihai.crudprocessor.aspect.TraceAll;
 import com.amazonaws.lambda.mihai.crudprocessor.model.DynamoTable;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -27,6 +28,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@TraceAll
 public class DynamoService {
 
 	private Logger logger = LogManager.getLogger(DynamoService.class);
@@ -56,8 +58,6 @@ public class DynamoService {
      * @throws Exception
      */
     public void createRecord(DynamoTable tableDetails, String jsonData) throws Exception {
-    	logger.debug("table: " + tableDetails);
-    	logger.debug("jsonResult: " + jsonData);
     	
     	Map nodes = getKeysInJson(jsonData);
     	logger.debug("nodes: " + Arrays.toString(nodes.entrySet().toArray()));
@@ -86,9 +86,10 @@ public class DynamoService {
                 logger.debug("conditional put result : " + output);
                 
             } catch (ConditionalCheckFailedException  ex) {
-            	//PK exception handling: do nothing because record already exists
+            	//PK exception handling: do nothing because record with PK already exists
             	//ex.printStackTrace();
             	logger.debug("ConditionalCheckFailedException: " + ex.getMessage());
+            	throw new RuntimeException(ex);
             }
         
         } else {
@@ -126,8 +127,6 @@ public class DynamoService {
      */
     private String readPrimaryKeyRecord(DynamoTable tableDetails) throws Exception {
     	
-    	logger.debug("readPrimaryKeyRecord table: " + tableDetails);
-
         Table table = getDynamoClient().getTable(tableDetails.getTableName());
                 
         PrimaryKey itemKey = new PrimaryKey();
@@ -158,8 +157,6 @@ public class DynamoService {
      */
     private String readPartitionKeyRecords(DynamoTable tableDetails) throws Exception {
     	
-    	logger.debug("readPartitionKeyRecords table: " + tableDetails);
-    	
     	Table table = getDynamoClient().getTable(tableDetails.getTableName());
 
     	QuerySpec spec = new QuerySpec()
@@ -188,7 +185,6 @@ public class DynamoService {
      * @throws Exception
      */
     public void deleteRecord(DynamoTable tableDetails) throws Exception {
-    	logger.debug("table: " + tableDetails);
 
         Table table = getDynamoClient().getTable(tableDetails.getTableName());
                 
@@ -271,11 +267,11 @@ public class DynamoService {
      */
     private String getKeysAsJson (ItemCollection<QueryOutcome> items, DynamoTable tableDetails) throws JsonProcessingException {
     	
-    	if (items.firstPage().hasNextPage()) throw new RuntimeException("multiple pages NOT implemented !!!");
-    	
     	Iterator<Item> iterator = items.firstPage().getLowLevelResult().getItems().listIterator();
     	
-//    	Iterator<Item> iterator = items.iterator();
+    	if (items.firstPage().hasNextPage()) 
+    		iterator = items.iterator();
+    	
     	Item item = null;
     	String jsonString = null;
     	StringBuffer tmp = new StringBuffer("[");

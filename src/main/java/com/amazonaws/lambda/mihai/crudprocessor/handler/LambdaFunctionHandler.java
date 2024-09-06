@@ -13,6 +13,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 
+import software.amazon.lambda.powertools.logging.Logging;
+
 public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
 	
 	private Logger logger = LogManager.getLogger(LambdaFunctionHandler.class);
@@ -30,14 +32,15 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
     }
 
     @Override
+    @Logging(logEvent = true,correlationIdPath = "/headers/x-amzn-trace-id")
     public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
-        logger.debug("Received event: " + event);
+        //logger.debug("Received event: " + event);
         
         try {
 
         	String routeKey = event.getRouteKey().substring(0, event.getRouteKey().indexOf('/')).trim();
         	logger.debug("Received HTTP method: " + routeKey);
-        	
+        	        	
         	Map<String, String> queryParams = event.getQueryStringParameters();
         	DynamoTable tableDetails = new DynamoTable();
         	tableDetails.setTableName(queryParams.get("table"));
@@ -53,8 +56,13 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
             switch (routeKey) {
             case "PUT" :
             	tableDetails.setPrimaryKeyEnabled(Boolean.TRUE);
-            	dynamoService.createRecord(tableDetails, event.getBody());
-            	response = "{\"result\":\"success create\"}";
+            	try {
+            		dynamoService.createRecord(tableDetails, event.getBody());
+            		response = "{\"result\":\"success create\"}";
+            		
+            	} catch (RuntimeException ex) {
+            		response = "{\"result\":\"record was not created\"}";
+            	}
                 break;
             case "GET":
             	response = dynamoService.readRecords(tableDetails);

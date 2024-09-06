@@ -53,3 +53,4 @@ The CRUD Processor could be invoked from Postman with simple URLs or with URL an
 - Deploy of AWS Lambda Function is done from the build process configured in pom.xml 
 - Intercept Lambda events using Lambda internal extension mechanism (using built-in java Instrumentation) deployed in Lambda Layer (see api-gateway.event.get.json)
 - Use Mockito & MockitoHamcrest test frameworks to mock AWS DynamoDB client
+- Use AspectJ and AWS Powertools-logging to trace the execution of methods in local and cloud environments
