@@ -52,5 +52,24 @@ The CRUD Processor could be invoked from Postman with simple URLs or with URL an
 - Same Lambda is used as integration for multiple API Gateway routes  
 - Deploy of AWS Lambda Function is done from the build process configured in pom.xml 
 - Intercept Lambda events using Lambda internal extension mechanism (using built-in java Instrumentation) deployed in Lambda Layer (see api-gateway.event.get.json)
-- Use Mockito & MockitoHamcrest test frameworks to mock AWS DynamoDB client
+- Use Mockito & MockitoHamcrest test frameworks to mock AWS DynamoDB client; Thus, all the layers (handler,service,model) of the application, in their original form, are tested
 - Use AspectJ and AWS Powertools-logging to trace the execution of methods in local and cloud environments
+
+
+## 4. Tunning Lambda for smaller costs
+
+Regarding costs, there is a balance among the runtime of the lambda and the memory it uses so that to obtain the best cost, because both influence the cost; when lambda uses low memory has longer execution time, while it uses more memory has smaller execution time. To find the right balance, see [here](https://github.com/alexcasalboni/aws-lambda-power-tuning) an application about this.
+<br>The graph can be used to also see the dependency among costs and memory, when high execution speed is required.
+<br>The parameters that I used for the Tunning Step Function are below:
+```json
+{
+    "lambdaARN": "arn:aws:lambda:us-east-2:<account_id>:function:CRUDProcessor",
+    "powerValues": [256, 512, 1024, 1536, 2048, 3008],
+    "num": 50,
+    "payloadS3": "s3://lambda-power-tuning/api-gateway.event.get.json",
+    "parallelInvocation": true,
+    "strategy": "cost"
+}
+```
+The result of the lambda tunning is shown below, where the minimum price is obtained when lambda is configured to run with 1536 MB.
+![AWS Lambda Power Tuning Results](tunning_lambda.png "AWS Lambda Power Tuning Results")
