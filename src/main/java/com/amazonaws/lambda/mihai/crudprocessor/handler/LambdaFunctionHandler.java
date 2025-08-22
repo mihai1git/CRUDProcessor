@@ -30,7 +30,7 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
     public LambdaFunctionHandler(DynamoService dynamoSrv) {
     	dynamoService = dynamoSrv;
     }
-
+    
     @Override
     @Logging(logEvent = true,correlationIdPath = "/headers/x-amzn-trace-id")
     public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
@@ -50,6 +50,7 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
         	tableDetails.setTableSKValue(queryParams.get(queryParams.get("sk")));
         	
         	String response = null;
+        	Map<String, String> headers = new HashMap<String, String>();
             
         	// the switch is done on HTTP method type from route, for all API GTW Routes
         	// Lambda should be reused on multiple routes
@@ -61,6 +62,7 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
             		response = "{\"result\":\"success create\"}";
             		
             	} catch (RuntimeException ex) {
+            		ex.printStackTrace();
             		response = "{\"result\":\"record was not created\"}";
             	}
                 break;
@@ -76,12 +78,20 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
             	dynamoService.deleteRecord(tableDetails);
             	response = "{\"result\":\"success delete\"}";
                 break;
+            case "OPTIONS":
+            	headers.put("Access-Control-Allow-Origin", "*");
+            	headers.put("Access-Control-Allow-Methods", "PUT");
+            	headers.put("Access-Control-Allow-Headers", "*");
+            	headers.put("Access-Control-Expose-Headers", "*");
+            	headers.put("Access-Control-Allow-Credentials", "true");
+            	response = "{\"result\":\"Preflight OPTION from HTTP CORS protocol (Cross-Origin Resource Sharing)\"}";
+            	break;
             default:
                 throw new RuntimeException("unexpected HTTP method / routeKey");
         }		
         	
         	
-        	Map<String, String> headers = new HashMap<String, String>();
+        	
             headers.put("Content-Type", "application/json");
             
             return APIGatewayV2HTTPResponse.builder()

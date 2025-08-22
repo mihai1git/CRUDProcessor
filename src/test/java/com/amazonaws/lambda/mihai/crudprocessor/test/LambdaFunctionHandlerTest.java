@@ -3,8 +3,10 @@ package com.amazonaws.lambda.mihai.crudprocessor.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.Aspects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,10 +19,12 @@ import org.mockito.quality.Strictness;
 
 import com.amazonaws.lambda.mihai.crudprocessor.aspect.TracingAspect;
 import com.amazonaws.lambda.mihai.crudprocessor.handler.LambdaFunctionHandler;
+import com.amazonaws.lambda.mihai.crudprocessor.model.DynamoTable;
 import com.amazonaws.lambda.mihai.crudprocessor.service.DynamoService;
 import com.amazonaws.lambda.mihai.crudprocessor.test.data.DynamoData;
 import com.amazonaws.lambda.mihai.crudprocessor.test.utils.TestContext;
 import com.amazonaws.lambda.mihai.crudprocessor.test.utils.TestUtils;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
@@ -41,12 +45,14 @@ public class LambdaFunctionHandlerTest {
 	private LambdaFunctionHandler handler;
 
     private DynamoDB dynamoClient = Mockito.mock(DynamoDB.class);
+    private AmazonDynamoDB dynamoDBClient = Mockito.mock(AmazonDynamoDB.class);
     
     private DynamoService dynamoSrv = new DynamoService();
         
     public LambdaFunctionHandlerTest () {
     	handler = new LambdaFunctionHandler(dynamoSrv);
     	dynamoSrv.setDynamoClient(dynamoClient);
+    	dynamoSrv.setDynamoDBClient(dynamoDBClient);
     	
     	//AWS SDK JAVA 1 will be deprecated, needs to be replaced with AWS SDK JAVA 2 in future versions 
     	System.setProperty("aws.java.v1.disableDeprecationAnnouncement", "true");
@@ -55,7 +61,7 @@ public class LambdaFunctionHandlerTest {
     @BeforeEach
     public void setUp() throws IOException {
        
-    	DynamoData.resetDynamoData(dynamoClient);
+    	DynamoData.resetDynamoData(dynamoClient, dynamoDBClient);
     	
     	//TracingAspect aspect = Aspects.aspectOf(TracingAspect.class);
     	
@@ -67,6 +73,39 @@ public class LambdaFunctionHandlerTest {
         ctx.setFunctionName("crudprocessor.handler.LambdaFunctionHandler");
 
         return ctx;
+    }
+    
+    @Test
+    @DisplayName("Ensure correct PrimaryKeys HTTP GET when get list of parent concept")
+    public void testLambdaFunctionGetAllParentConcepts() throws IOException {
+    	
+    	APIGatewayV2HTTPEvent event = TestUtils.parse("/api-gateway.event.get.json", APIGatewayV2HTTPEvent.class);
+    	
+    	List<Map<String, String>> museums = DynamoData.getMuseumsItems ();
+    	
+    	for (Map<String, String> museum : museums) {
+    		DynamoData.addMuseumItem(museum);
+    	}
+    	System.out.println("testLambdaFunctionGetAllPrimaryKeys tabMuseumsScanResult : " + DynamoData.tabMuseumsScanResult.getItems().size());
+    	
+//    	DynamoTable tableDetails = new DynamoTable();
+//    	tableDetails.setTableName(TAB_NAME_MUSEUMS);
+//    	tableDetails.setTablePKName("Locality");
+//    	tableDetails.setTablePKValue(jsonItemMap.get("Locality"));
+//    	tableDetails.setTableSKName("Name");
+//    	tableDetails.setTableSKValue(jsonItemMap.get("Name"));
+    	
+    	Map<String, String> queryParams = event.getQueryStringParameters();
+    	
+    	queryParams.put("pk", "Locality");
+    	queryParams.put("sk", "Name");
+    	queryParams.put("table", DynamoData.TAB_NAME_MUSEUMS);
+    	    	
+    	APIGatewayV2HTTPResponse response = handler.handleRequest(event, createContext());
+    	System.out.println("TEST RESP: " + response);
+    	//[{"ItemsCounter":2,"Locality":"MANGALIA"},{"ItemsCounter":2,"Locality":"BOTOȘANI"},{"ItemsCounter":2,"Locality":"MEDGIDIA"},{"ItemsCounter":2,"Locality":"CARANSEBEȘ"},{"ItemsCounter":11,"Locality":"CONSTANȚA"},{"ItemsCounter":8,"Locality":"BUCHAREST"},{"ItemsCounter":2,"Locality":"ORAVIȚA"}]
+    	
+    	assertEquals(7, StringUtils.countMatches(new String(response.getBody().getBytes()), "Locality"), "the correct numeber of parent concept (localities) is 7");
     }
     
     @Test
@@ -84,6 +123,7 @@ public class LambdaFunctionHandlerTest {
     	
     	System.out.println("TEST RESP: " + response);
     	
+    	//body={"dt":"2024-10-11 12:24:25","person":"Mihai","PULS":"78","SIS":"102","DIA":"80","CMNT":"low pulse"}
     	assertEquals(6, DynamoService.getKeysInJson(new String(response.getBody().getBytes())).entrySet().size(), "For BloodPressure table there are 6 fields");
     	
     	Map<String, String> queryParams = event.getQueryStringParameters();

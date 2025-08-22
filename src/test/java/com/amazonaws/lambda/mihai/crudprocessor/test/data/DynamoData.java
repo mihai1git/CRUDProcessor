@@ -2,9 +2,11 @@ package com.amazonaws.lambda.mihai.crudprocessor.test.data;
 
 import static org.mockito.Mockito.when;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,6 +26,7 @@ import org.mockito.stubbing.Answer;
 import com.amazonaws.lambda.mihai.crudprocessor.handler.LambdaFunctionHandler;
 import com.amazonaws.lambda.mihai.crudprocessor.model.DynamoTable;
 import com.amazonaws.lambda.mihai.crudprocessor.service.DynamoService;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DeleteItemOutcome;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
@@ -41,25 +44,69 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemResult;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 
 public class DynamoData {
 	
 	private static Logger logger = LogManager.getLogger(DynamoData.class);
+	public static final String DELIMITER = "\\|";
 	
 	public static final String TAB_NAME_BLOOD_PRESSURE = "BloodPressure";
 	public static final String TAB_NAME_BLOOD_TEMPERATURE = "Temperature";
+	public static final String TAB_NAME_MUSEUMS = "Museums";
+	public static final String[] MUSEUM_FIELDS = {"MuseumName", "County", "Locality", "Address", "lat", "lon", "Code", "Profile"};
+
 
 	public static Table tabBloodPressure;
 	public static List<Item> tabBloodPressureItemsList;
 	public static Collection<Map<String, AttributeValue>> tabBloodPressureItemsCollection;
 	public static Table tabTemperature;
+	public static ScanResult tabMuseumsScanResult;
 	
-	public static void resetDynamoData (DynamoDB dynamoClient) {
+	public static void resetDynamoData (DynamoDB dynamoClient, AmazonDynamoDB dynamoDBClient) {
 		logger.debug("resetDynamoData");
 		tabBloodPressure = Mockito.mock(Table.class);
 		tabBloodPressureItemsList = new ArrayList<Item>();
 		tabBloodPressureItemsCollection = new ArrayList<Map<String, AttributeValue>>();
 		tabTemperature = Mockito.mock(Table.class);
+		tabMuseumsScanResult = Mockito.mock(ScanResult.class);
+		
+		when(tabMuseumsScanResult.getItems()).thenCallRealMethod();		
+		Mockito.doCallRealMethod().when(tabMuseumsScanResult).setItems(Mockito.any(List.class));
+		
+		tabMuseumsScanResult.setItems(new ArrayList<java.util.Map<String, AttributeValue>>());   
+		
+		//when(dynamoDBClient.scan(Mockito.eq(DynamoData.TAB_NAME_MUSEUMS), Mockito.any(List.class))).thenReturn(tabTemperatureScanResult);
+		
+		when(dynamoDBClient.scan(Mockito.eq(DynamoData.TAB_NAME_MUSEUMS), Mockito.any(List.class))).thenAnswer(new Answer<ScanResult>() {
+			
+			public ScanResult answer(InvocationOnMock invocation) throws Throwable {				
+				logger.debug("START dynamoDBClient.scan");
+				
+				// return only requested fields in mock view
+				ScanResult tabMuseumsScanResultView = Mockito.mock(ScanResult.class);				
+				when(tabMuseumsScanResultView.getItems()).thenCallRealMethod();		
+				Mockito.doCallRealMethod().when(tabMuseumsScanResultView).setItems(Mockito.any(List.class));
+				
+				tabMuseumsScanResultView.setItems(new ArrayList<java.util.Map<String, AttributeValue>>());
+				
+				for (Map<String, AttributeValue> allValues : tabMuseumsScanResult.getItems()) {
+					
+					Map<String, AttributeValue> itemAV = new HashMap<String, AttributeValue>();					
+					((List) invocation.getArguments()[1]).forEach(element -> {
+						if (allValues.get(element) == null) throw new RuntimeException("Unexpected field (PK) name : " + element);
+						itemAV.put((String)element, allValues.get(element));
+					});
+					
+					tabMuseumsScanResultView.getItems().add(itemAV);
+				}
+				
+				System.out.println("tabMuseumsScanResultView :" + tabMuseumsScanResultView.getItems().size());
+				
+				return tabMuseumsScanResultView;
+			}
+			
+		});
 		
 		when(dynamoClient.getTable(DynamoData.TAB_NAME_BLOOD_PRESSURE)).thenReturn(tabBloodPressure);
 		when(dynamoClient.getTable(DynamoData.TAB_NAME_BLOOD_TEMPERATURE)).thenReturn(tabTemperature);
@@ -256,6 +303,68 @@ public class DynamoData {
 	    //System.out.println(jsonItem);
 	    
 	    return jsonItemMap;
+	}
+	
+	/**
+	 * 
+	 * @param jsonItemMap
+	 */
+	public static void addMuseumItem (Map<String, String> jsonItemMap) {
+		logger.debug("addMuseumItem : " + Arrays.toString(jsonItemMap.entrySet().toArray()));
+    	
+    	Map<String, AttributeValue> itemAV = new HashMap<String, AttributeValue>();
+    	jsonItemMap.entrySet().forEach(entry -> itemAV.put(entry.getKey(), new AttributeValue(entry.getValue()) ));
+    	
+    	tabMuseumsScanResult.getItems().add(itemAV);
+    	
+    }
+	
+	/**
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	public static List<Map<String, String>> getMuseumsItems () throws IOException {
+		
+		List<Map<String, String>> records = new ArrayList<>();
+		
+    	File initialFile = new File("src/test/resources/museum.items.csv");
+		FileInputStream file = new FileInputStream(initialFile);
+		String items = new String(file.readAllBytes());
+	    file.close();	
+		
+		try (BufferedReader br = new BufferedReader(new StringReader(items))) {
+		    String line;
+		    while ((line = br.readLine()) != null) {
+		        String[] values = line.split(DELIMITER);
+		        records.add(getMuseumPrototypeItem(values));
+		    }
+		}
+		
+		return records;
+	}
+	
+	/**
+	 * 
+	 * @param values
+	 * @return
+	 * @throws IOException
+	 */
+	public static Map<String, String> getMuseumPrototypeItem (String[] values) throws IOException {
+		
+		//System.out.println("START getMuseumPrototypeItem with: " + Arrays.toString(values));
+   
+	    Map<String, String> itemMap = new HashMap<String, String>();
+	    
+	    for (int i = 0; i < values.length; i++) {
+	    	
+	    	itemMap.put(MUSEUM_FIELDS[i], values[i]);
+		    
+	    }
+	    
+	    //System.out.println(itemMap);
+	    
+	    return itemMap;
 	}
 
 }

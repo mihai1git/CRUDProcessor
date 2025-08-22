@@ -243,12 +243,6 @@
 		    <scope>test</scope>
 		</dependency>
 
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.10.3</version>
-            <scope>test</scope>
-        </dependency>
 	    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
 	<dependency>
 	    <groupId>org.mockito</groupId>
@@ -320,6 +314,14 @@
         <artifactId>powertools-logging</artifactId>
         <version>1.18.0</version>
     </dependency>
+    
+	    <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+	<dependency>
+	    <groupId>org.apache.commons</groupId>
+	    <artifactId>commons-lang3</artifactId>
+	    <version>3.18.0</version>
+	    <scope>test</scope>
+	</dependency>
 
   </dependencies>
 

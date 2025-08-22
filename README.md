@@ -3,7 +3,7 @@
 ## 1. Overview
 
 CRUD is the acronim of Create Read Update Delete and refers to the actions that can be done on the data that describe one Concept. 
-This processor can handle multiple concepts, one concept is mapped for each API Gateway Route.
+This processor can handle multiple concepts, one concept is mapped for each API Gateway Route. A concept could have 2 sub-concepts linked in a parent-child relationship, mapped to DynamoDB PK,SK feature.
 This Lambda take part from an application according to the below architecture where it is highlighted with red: API Gateway Integration / CRUD Processor.
 
 ![CRUD Processor](aws_CRUD_processor_v1_1.png "CRUD Processor")
@@ -21,6 +21,7 @@ The CRUD Processor could be invoked from Postman with simple URLs or with URL an
 |POST /car	 						| https://<api_id>.amazonaws.com/car?pk=car&sk=dt&table=Car								|
 |GET  /car	 						| https://<api_id>.amazonaws.com/car?pk=car&sk=dt&table=Car&car=B-15-SGP								|
 |GET  /car	 						| https://<api_id>.amazonaws.com/car?pk=car&sk=dt&table=Car&car=B-15-SGP&dt=2024-10-11 12:24:25								|
+|GET  /museum	 						| https://<api_id>.amazonaws.com/museum?pk=Locality&sk=MuseumName&table=Museums								|
 
 <br>Below are some examples of JSON messages
 ```json

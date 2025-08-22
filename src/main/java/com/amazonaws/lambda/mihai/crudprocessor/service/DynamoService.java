@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,7 +23,10 @@ import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -34,6 +38,7 @@ public class DynamoService {
 	private Logger logger = LogManager.getLogger(DynamoService.class);
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 	
+	private AmazonDynamoDB dynamoDBClient;	
 	private DynamoDB dynamoClient;
         
     public DynamoService() {}
@@ -45,8 +50,8 @@ public class DynamoService {
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion("us-east-2").build();
         DynamoDB docClient = new DynamoDB(client);
 
-        
     	srv.setDynamoClient(docClient);
+    	srv.setDynamoDBClient(client);
     	
     	return srv;
     }
@@ -99,6 +104,11 @@ public class DynamoService {
     }
     
     /**
+     * get table child concepts OR get table parent concept :
+     * - PK != null && SK != null : get one child concept
+     * - PK != null && SK == null : get multiple childs concept = get one parent concept
+     * - PK != null && SK != null : get multiple parents concept
+     * 
      * cRud
      * @param tableDetails
      * @return
@@ -109,7 +119,11 @@ public class DynamoService {
 		String jsonString = null;
 	    	
     	if (tableDetails.getTableSKValue() == null) {
-    		jsonString = readPartitionKeyRecords(tableDetails);
+    		if (tableDetails.getTablePKValue() == null) {
+        		jsonString = readAllPartitionKeys(tableDetails);        		
+        	} else {
+        		jsonString = readPartitionKeyRecords(tableDetails);
+        	}
     	} else {
     		jsonString = readPrimaryKeyRecord(tableDetails);
     		
@@ -165,6 +179,27 @@ public class DynamoService {
     	ItemCollection<QueryOutcome> items = table.query(spec);
     	
     	String jsonString = getKeysAsJson(items, tableDetails);
+    	
+    	return jsonString;
+    }
+    
+    /**
+     * cRudL
+     * @param tableDetails
+     * @return
+     * @throws Exception
+     */
+    private String readAllPartitionKeys(DynamoTable tableDetails) throws Exception {
+    	
+    	logger.debug("START with: " + tableDetails);
+    	
+    	ScanRequest scanRequest = new ScanRequest()
+                .withTableName(tableDetails.getTableName())
+                .withProjectionExpression(tableDetails.getTablePKName());
+
+        ScanResult result = getDynamoDBClient().scan(tableDetails.getTableName(), Arrays.asList(tableDetails.getTablePKName()));
+        
+    	String jsonString = getPKAsJson(result, tableDetails);
     	
     	return jsonString;
     }
@@ -295,6 +330,68 @@ public class DynamoService {
     	
     	return jsonString;
     }
+    
+    /**
+     * build a JSON string from a scan structure that contains PK
+     * @param result
+     * @param tableDetails
+     * @return
+     * @throws JsonProcessingException
+     */
+    private String getPKAsJson (ScanResult result, DynamoTable tableDetails) {
+
+    	Map<String, Integer> keys = new HashMap<String, Integer>();
+    	        
+    	//the structure contains always: only 1 field - PK, that is string
+        for (Map<String, AttributeValue> attributeList : result.getItems()) {
+        	 for (Map.Entry<String, AttributeValue> item : attributeList.entrySet()) {        		 
+                 String attributeName = item.getKey();
+                 String attributeStringValue = item.getValue().getS();
+                 
+                 if (keys.containsKey(attributeStringValue)) {
+                	 keys.put(attributeStringValue, keys.get(attributeStringValue) + 1);
+                	 
+                 } else {
+                	 keys.put(attributeStringValue, Integer.valueOf(1));
+                 }
+             }
+        }
+               
+        String jsonString = buildJSONforPK (keys, tableDetails);
+    	
+    	logger.debug("END getPKAsJson with: " + jsonString);
+    	
+    	return jsonString;
+    }
+    /**
+     * helper method for getPKAsJson
+     * @param keys
+     * @param tableDetails
+     * @return
+     */
+    private String buildJSONforPK (Map<String, Integer> keys, DynamoTable tableDetails) {
+    	String jsonString = null;
+    	StringBuffer tmp = new StringBuffer("[");
+    	
+    	for (Entry<String, Integer> entry: keys.entrySet()) {
+    		
+        	Map<String, Object> key = new HashMap<String, Object>();
+            key.put(tableDetails.getTablePKName(), entry.getKey());
+            key.put("ItemsCounter", entry.getValue());
+            try {
+				tmp.append(getJson(key)).append(",");
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
+    	}
+
+    	if (tmp.length() > 10) {
+    		tmp = tmp.deleteCharAt(tmp.length()-1).append("]");
+    		jsonString = tmp.toString();
+    	}
+    	
+    	return jsonString;
+    }
 
 
 	public DynamoDB getDynamoClient() {
@@ -305,5 +402,13 @@ public class DynamoService {
 		this.dynamoClient = dynamoClient;
 	}
 
+	public AmazonDynamoDB getDynamoDBClient() {
+		return dynamoDBClient;
+	}
 
+	public void setDynamoDBClient(AmazonDynamoDB dynamoDBClient) {
+		this.dynamoDBClient = dynamoDBClient;
+	}
+
+	
 }

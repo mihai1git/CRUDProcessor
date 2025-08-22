@@ -2,6 +2,9 @@ package com.amazonaws.lambda.mihai.crudprocessor.model;
 
 /**
  * class that holds metadata for a DynamoDB table
+ * each table could holds two concepts: 
+ * - child concept: main purpose of the table, identified by PK+SK
+ * - parent concept: secondary purpose of the table, if exists, identified by PK only
  * @author mike
  *
  */

@@ -19,6 +19,7 @@ import org.mockito.quality.Strictness;
 
 import com.amazonaws.lambda.mihai.crudprocessor.model.DynamoTable;
 import com.amazonaws.lambda.mihai.crudprocessor.test.data.DynamoData;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
@@ -36,6 +37,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 public class DynamoDataTest {
 	
 	private DynamoDB dynamoClient = Mockito.mock(DynamoDB.class);
+	private AmazonDynamoDB dynamoDBClient = Mockito.mock(AmazonDynamoDB.class);
 	
 	public DynamoDataTest () {
 		//AWS SDK JAVA 1 will be deprecated, needs to be replaced with AWS SDK JAVA 2 in future versions 
@@ -45,7 +47,7 @@ public class DynamoDataTest {
     @BeforeEach
     public void setUp() throws IOException {
        
-    	DynamoData.resetDynamoData(dynamoClient);
+    	DynamoData.resetDynamoData(dynamoClient, dynamoDBClient);
     }
     
     @Test
