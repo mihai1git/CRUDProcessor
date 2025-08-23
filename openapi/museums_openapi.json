@@ -2,7 +2,7 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Romania Museums",
-    "description": "This is a Museums Server based on the OpenAPI 3.0 specification.\n\nRomania museums data is real data from [here](https://data.gov.ro/dataset/ghidul-muzeelor-din-romania).\n\nSome useful links:\n- [The Swagger Hub Museums link](https://app.swaggerhub.com/apis/CONTACT_213/museums/)\n- [The source API definition for the Museums](https://github.com/mihai1git/CRUDProcessor/openapi/museums_openapi.json)",
+    "description": "This is a Museums Server based on the OpenAPI 3.0 specification.\n\nRomania museums data is real data from [here](https://data.gov.ro/dataset/ghidul-muzeelor-din-romania).\n\nSome useful links:\n- [The Swagger Hub Museums link](https://app.swaggerhub.com/apis/CONTACT_213/museums/)\n- [The source API definition for the Museums](https://github.com/mihai1git/CRUDProcessor/blob/main/openapi/museums_openapi.json)",
     "contact": {
       "email": "contact@mihaiadam.com"
     },
