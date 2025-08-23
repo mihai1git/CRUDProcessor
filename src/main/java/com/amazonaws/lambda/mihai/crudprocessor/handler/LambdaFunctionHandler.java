@@ -7,7 +7,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.amazonaws.lambda.mihai.crudprocessor.model.DynamoTable;
+import com.amazonaws.lambda.mihai.crudprocessor.model.RateAuthorization;
 import com.amazonaws.lambda.mihai.crudprocessor.service.DynamoService;
+import com.amazonaws.lambda.mihai.crudprocessor.service.SecurityService;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
@@ -19,22 +21,52 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
 	
 	private Logger logger = LogManager.getLogger(LambdaFunctionHandler.class);
 
-	public DynamoService dynamoService;
+	private DynamoService dynamoService;
+	private SecurityService securityService;
+	
+	private Map<String, String> environmentVariables;
 
     public LambdaFunctionHandler() {
     	dynamoService = DynamoService.build();
+    	securityService = new SecurityService();
     	
+    	securityService.setDynamoSrv(dynamoService);
+    	
+    	setEnvironmentVars(new HashMap<String, String>(System.getenv()));
     }
 
     // Test purpose only.
-    public LambdaFunctionHandler(DynamoService dynamoSrv) {
-    	dynamoService = dynamoSrv;
+    public LambdaFunctionHandler(
+    		DynamoService dynamoSrv, 
+    		SecurityService securityService, 
+    		Map<String, String> vars) {
+    	
+    	this.dynamoService = dynamoSrv;
+    	this.securityService = securityService;
+    	
+    	securityService.setDynamoSrv(dynamoService);
+    	
+    	setEnvironmentVars(vars);
     }
-    
+        
     @Override
     @Logging(logEvent = true,correlationIdPath = "/headers/x-amzn-trace-id")
     public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
         //logger.debug("Received event: " + event);
+    	
+    	securityService.getEnvironmentVariables().put("apigatewayid", event.getRequestContext().getApiId());
+
+    	Map<String, String> headers = new HashMap<String, String>();
+    	
+    	//early return if exceed quota
+    	RateAuthorization rateAuth = securityService.isRateBasedAuthorized();
+    	if (!rateAuth.getAuthorization()) 
+    		return 	APIGatewayV2HTTPResponse.builder()
+		             .withStatusCode(429)//429 Too Many Requests (RFC 6585)
+		             .withHeaders(headers)
+		             .withIsBase64Encoded(false)
+		             .withBody("RateLimitAuthorizer: Service had too many requests for one day, come back over " + rateAuth.getUnauthorizedHours() + " hours !")
+		             .build();
         
         try {
 
@@ -50,7 +82,7 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
         	tableDetails.setTableSKValue(queryParams.get(queryParams.get("sk")));
         	
         	String response = null;
-        	Map<String, String> headers = new HashMap<String, String>();
+        	
             
         	// the switch is done on HTTP method type from route, for all API GTW Routes
         	// Lambda should be reused on multiple routes
@@ -106,6 +138,13 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
             throw new RuntimeException(e);
         }
 
+    }
+    
+    private void setEnvironmentVars (Map<String, String> vars) {
+    	//logger.debug(Arrays.toString(vars.entrySet().toArray()));
+    	environmentVariables = vars;
+    	
+    	securityService.setEnvironmentVariables(vars);
     }
 
 }

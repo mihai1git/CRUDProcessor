@@ -1,13 +1,14 @@
 package com.amazonaws.lambda.mihai.crudprocessor.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.aspectj.lang.Aspects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,10 +18,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import com.amazonaws.lambda.mihai.crudprocessor.aspect.TracingAspect;
 import com.amazonaws.lambda.mihai.crudprocessor.handler.LambdaFunctionHandler;
-import com.amazonaws.lambda.mihai.crudprocessor.model.DynamoTable;
+import com.amazonaws.lambda.mihai.crudprocessor.model.RateAuthorization;
 import com.amazonaws.lambda.mihai.crudprocessor.service.DynamoService;
+import com.amazonaws.lambda.mihai.crudprocessor.service.SecurityService;
 import com.amazonaws.lambda.mihai.crudprocessor.test.data.DynamoData;
 import com.amazonaws.lambda.mihai.crudprocessor.test.utils.TestContext;
 import com.amazonaws.lambda.mihai.crudprocessor.test.utils.TestUtils;
@@ -48,9 +49,15 @@ public class LambdaFunctionHandlerTest {
     private AmazonDynamoDB dynamoDBClient = Mockito.mock(AmazonDynamoDB.class);
     
     private DynamoService dynamoSrv = new DynamoService();
-        
+    private SecurityService securityService = Mockito.mock(SecurityService.class);
+    
     public LambdaFunctionHandlerTest () {
-    	handler = new LambdaFunctionHandler(dynamoSrv);
+    	
+    	when(securityService.isRateBasedAuthorized()).thenReturn(new RateAuthorization(Boolean.TRUE, null));
+    	
+    	Map<String, String> vars = new HashMap<String, String>();
+    	
+    	handler = new LambdaFunctionHandler(dynamoSrv, securityService, vars);
     	dynamoSrv.setDynamoClient(dynamoClient);
     	dynamoSrv.setDynamoDBClient(dynamoDBClient);
     	
