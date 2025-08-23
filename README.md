@@ -46,7 +46,7 @@ The CRUD Processor could be invoked from Postman with simple URLs or with URL an
     "cmnt":"high speed"
 }
 ```
-## 3. AWS SDK features used
+## 3. Features used
 - The log is done in all application using Log4j2, that sends output to AWS CloudWatch service
 - Each AWS client used is encapsulated in a POJO application service
 - Use DynamoDb Basic/JSON Client to communicate with DynamoDB
@@ -55,6 +55,8 @@ The CRUD Processor could be invoked from Postman with simple URLs or with URL an
 - Intercept Lambda events using Lambda internal extension mechanism (using built-in java Instrumentation) deployed in Lambda Layer (see api-gateway.event.get.json)
 - Use Mockito & MockitoHamcrest test frameworks to mock AWS DynamoDB client; Thus, all the layers (handler,service,model) of the application, in their original form, are tested
 - Use AspectJ and AWS Powertools-logging to trace the execution of methods in local and cloud environments
+- Use rate limit authorization to block internet access over threshold, for public API
+- Add OpenAPI definition file for particular read-only usage: Romania Museums (see /openapi/museums_openapi.json)
 
 
 ## 4. Tunning Lambda for smaller costs

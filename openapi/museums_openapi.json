@@ -1,0 +1,163 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Romania Museums",
+    "description": "This is a Museums Server based on the OpenAPI 3.0 specification.\n\nRomania museums data is real data from [here](https://data.gov.ro/dataset/ghidul-muzeelor-din-romania).\n\nSome useful links:\n- [The Swagger Hub Museums link](https://app.swaggerhub.com/apis/CONTACT_213/museums/)\n- [The source API definition for the Museums](https://github.com/mihai1git/CRUDProcessor/openapi/museums_openapi.json)",
+    "contact": {
+      "email": "contact@mihaiadam.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "1.0.1"
+  },
+  "servers": [
+    {
+      "url": "https://5abm9hezh7.execute-api.us-east-2.amazonaws.com",
+      "description": "AWS APIGW with Lambda integration & DynamoDB"
+    }
+  ],
+  "paths": {
+    "/locality/all": {
+      "get": {
+        "summary": "Get all Localities with museums from Romania",
+        "operationId": "getLocalities",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Locality"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/locality/museums": {
+      "get": {
+        "summary": "Get all museums for Locality parameter",
+        "operationId": "getLcalityMuseums",
+        "parameters": [
+          {
+            "name": "Locality",
+            "in": "query",
+            "description": "Locality name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalityMuseums"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/museum/findByName": {
+      "get": {
+        "summary": "Get one museum details according to Locality and MuseumName",
+        "operationId": "getMuseums",
+        "parameters": [
+          {
+            "name": "Locality",
+            "in": "query",
+            "description": "Locality of the museum",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MuseumName",
+            "in": "query",
+            "description": "Museum name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Museum"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Locality": {
+        "type": "object",
+        "properties": {
+          "Locality": {
+            "type": "string"
+          },
+          "IntemCounter": {
+            "type": "string"
+          }
+        }
+      },
+      "LocalityMuseums": {
+        "type": "object",
+        "properties": {
+          "Lcality": {
+            "type": "string"
+          },
+          "MuseumName": {
+            "type": "string"
+          }
+        }
+      },
+      "Museum": {
+        "type": "object",
+        "properties": {
+          "MuseumName": {
+            "type": "string"
+          },
+          "County": {
+            "type": "string"
+          },
+          "Locality": {
+            "type": "string"
+          },
+          "Address": {
+            "type": "string"
+          },
+          "Code": {
+            "type": "string"
+          },
+          "Profile": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}
