@@ -4,7 +4,7 @@
 
   <groupId>com.amazonaws.lambda.mihai</groupId>
   <artifactId>crudprocessor</artifactId>
-  <version>2.0</version>
+  <version>2.2</version>
   <packaging>jar</packaging>
 
   <properties>
@@ -226,8 +226,8 @@
 	    <dependencies>
 	      <dependency>
 	        <groupId>com.amazonaws</groupId>
-	        <artifactId>aws-java-sdk-bom</artifactId><!-- JAVA 1 !!!!  Jul 31, 2024 -->
-	        <version>1.12.767</version>
+	        <artifactId>aws-java-sdk-bom</artifactId><!-- JAVA 1 !!!!  Sep 05, 2025 -->
+	        <version>1.12.791</version>
 	        <type>pom</type>
 	        <scope>import</scope>
 	      </dependency>

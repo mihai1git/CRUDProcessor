@@ -1,10 +1,12 @@
 package com.amazonaws.lambda.mihai.crudprocessor.service;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -117,10 +119,11 @@ public class DynamoService {
      * 
      * cRud
      * @param tableDetails
+     * @param dataColumns even on GET, it is the JSON identical with the one on PUT; it holds the fields that should be brought from database
      * @return
      * @throws Exception
      */
-	public String readRecords(DynamoTable tableDetails) throws Exception {
+	public String readRecords(DynamoTable tableDetails, String dataColumns) throws Exception {
 		
 		String jsonString = null;
 	    	
@@ -128,7 +131,14 @@ public class DynamoService {
     		if (tableDetails.getTablePKValue() == null) {
         		jsonString = readAllPartitionKeys(tableDetails);        		
         	} else {
-        		jsonString = readPartitionKeyRecords(tableDetails);
+        		
+        		if (dataColumns == null) {
+        			
+        			jsonString = readPartitionSortKeys(tableDetails);  
+        			
+        		} else {
+        	    	jsonString = readPartitionKeyRecords(tableDetails, dataColumns);
+        		}        		
         	}
     	} else {
     		jsonString = readPrimaryKeyRecord(tableDetails);
@@ -175,7 +185,29 @@ public class DynamoService {
      * @return
      * @throws Exception
      */
-    private String readPartitionKeyRecords(DynamoTable tableDetails) throws Exception {
+    private String readPartitionSortKeys(DynamoTable tableDetails) throws Exception {
+    	
+    	Table table = getDynamoClient().getTable(tableDetails.getTableName());
+
+    	QuerySpec spec = new QuerySpec()
+    			.withHashKey(tableDetails.getTablePKName(), tableDetails.getTablePKValue())
+    			.withProjectionExpression(tableDetails.getTablePKName() + ", " + tableDetails.getTableSKName());
+
+    	ItemCollection<QueryOutcome> items = table.query(spec);
+    	
+    	String jsonString = getKeysAsJson(items, tableDetails);
+    	
+    	return jsonString;
+    }
+    
+    
+    /**
+     * cRudL
+     * @param tableDetails
+     * @return
+     * @throws Exception
+     */
+    private String readPartitionKeyRecords(DynamoTable tableDetails, String dataColumns) throws Exception {
     	
     	Table table = getDynamoClient().getTable(tableDetails.getTableName());
 
@@ -184,10 +216,11 @@ public class DynamoService {
 
     	ItemCollection<QueryOutcome> items = table.query(spec);
     	
-    	String jsonString = getKeysAsJson(items, tableDetails);
+    	String jsonString = getItemsAsJson(items, tableDetails, dataColumns);
     	
     	return jsonString;
     }
+
     
     /**
      * cRudL
@@ -263,7 +296,7 @@ public class DynamoService {
      * @return
      * @throws JsonProcessingException
      */
-    private String getJson (Map nodes) throws JsonProcessingException {
+    private static String getJson (Map nodes) throws JsonProcessingException {
     	String json = OBJECT_MAPPER.writeValueAsString(nodes);
     	    	
     	return json;
@@ -326,6 +359,54 @@ public class DynamoService {
                 Map<String, Object> keys = new HashMap<String, Object>();
                 keys.put(tableDetails.getTablePKName(), nodes.get(tableDetails.getTablePKName()));
                 keys.put(tableDetails.getTableSKName(), nodes.get(tableDetails.getTableSKName()));
+                tmp.append(getJson(keys)).append(",");
+            }
+    	}
+    	if (tmp.length() > 10) {
+    		tmp = tmp.deleteCharAt(tmp.length()-1).append("]");
+    		jsonString = tmp.toString();
+    	}
+    	
+    	return jsonString;
+    }
+    
+    /**
+     * convert DynamodDB Items list into JSON
+     * get entire item
+     * @param items
+     * @param tableDetails
+     * @return
+     * @throws JsonProcessingException
+     */
+    private String getItemsAsJson (ItemCollection<QueryOutcome> items, DynamoTable tableDetails, String dataColumns) throws JsonProcessingException {
+    	
+    	Iterator<Item> iterator = items.firstPage().getLowLevelResult().getItems().listIterator();
+    	
+    	if (items.firstPage().hasNextPage()) 
+    		iterator = items.iterator();
+    	
+    	Item item = null;
+    	String jsonString = null;
+    	List<String> dataCols = Arrays.asList(dataColumns.split(","));
+    	StringBuffer tmp = new StringBuffer("[");
+    	
+    	while (iterator.hasNext()) {
+    		
+    	    item = iterator.next();
+    	    logger.debug("item : " + item); 
+            if (item != null) {
+                Map nodes = item.asMap();
+                Map<String, Object> keys = new HashMap<String, Object>();
+                keys.put(tableDetails.getTablePKName(), nodes.get(tableDetails.getTablePKName()));
+                keys.put(tableDetails.getTableSKName(), nodes.get(tableDetails.getTableSKName()));
+                
+                //add all fields requested in CSV parameter: dataColumns
+                Iterator<String> columnNameIter = dataCols.iterator();
+                while (columnNameIter.hasNext()) {
+                	String columnName = columnNameIter.next();
+                	keys.put(columnName, nodes.get(columnName));
+                }
+                
                 tmp.append(getJson(keys)).append(",");
             }
     	}

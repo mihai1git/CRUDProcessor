@@ -1,0 +1,160 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Romania Monuments",
+    "description": "This is a Monuments Server based on the OpenAPI 3.0 specification.\n\nRomania monuments data is real data from [here]().\n\nSome useful links:\n- [The Swagger Hub Monuments link](https://app.swaggerhub.com/apis/CONTACT_213/museums/)\n- [The source API definition for the monuments](https://github.com/mihai1git/CRUDProcessor/blob/main/openapi/monuments_openapi.json)",
+    "contact": {
+      "email": "contact@mihaiadam.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "1"
+  },
+  "servers": [
+    {
+      "url": "https://29gpr74ox6.execute-api.us-east-2.amazonaws.com",
+      "description": "AWS APIGW with Lambda integration & DynamoDB"
+    }
+  ],
+  "paths": {
+    "/geography/all": {
+      "get": {
+        "summary": "Get all Geographies/Localities with monuments from Romania",
+        "operationId": "getGeographies",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Geography"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/geography/monuments": {
+      "get": {
+        "summary": "Get all monumnets for Geography parameter",
+        "operationId": "getGeographyMonuments",
+        "parameters": [
+          {
+            "name": "Geography",
+            "in": "query",
+            "description": "Geography name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeographyMonuments"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monument/findByCode": {
+      "get": {
+        "summary": "Get one monument details according to Geography and Monument Code",
+        "operationId": "getMonument",
+        "parameters": [
+          {
+            "name": "Geography",
+            "in": "query",
+            "description": "Geography of the museum",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "MonumentCode",
+            "in": "query",
+            "description": "Code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Monument"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Geography": {
+        "type": "object",
+        "properties": {
+          "Geography": {
+            "type": "string"
+          },
+          "IntemCounter": {
+            "type": "string"
+          }
+        }
+      },
+      "GeographyMonuments": {
+        "type": "object",
+        "properties": {
+          "Geography": {
+            "type": "string"
+          },
+          "MonumentCode": {
+            "type": "string"
+          },
+          "MonumentName": {
+          	"type": "string"
+          }
+        }
+      },
+      "Monument": {
+        "type": "object",
+        "properties": {
+          "MonumentName": {
+            "type": "string"
+          },
+          "Geography": {
+            "type": "string"
+          },
+          "Address": {
+            "type": "string"
+          },
+          "MonumentCode": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}

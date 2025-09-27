@@ -99,7 +99,8 @@ public class LambdaFunctionHandler implements RequestHandler<APIGatewayV2HTTPEve
             	}
                 break;
             case "GET":
-            	response = dynamoService.readRecords(tableDetails);
+            	logger.debug("DATA on GET: " + queryParams.get("dataColumns"));
+            	response = dynamoService.readRecords(tableDetails, queryParams.get("dataColumns"));
             	if (response == null) response = "{\"result\":\"there is no such item\"}";
                 break;
             case "POST" :
