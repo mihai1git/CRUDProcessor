@@ -2,7 +2,7 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Romania Monuments",
-    "description": "This is a Monuments Server based on the OpenAPI 3.0 specification.\n\nRomania monuments data is real data from [here]().\n\nSome useful links:\n- [The Swagger Hub Monuments link](https://app.swaggerhub.com/apis/CONTACT_213/museums/)\n- [The source API definition for the monuments](https://github.com/mihai1git/CRUDProcessor/blob/main/openapi/monuments_openapi.json)",
+    "description": "This is a Monuments Server based on the OpenAPI 3.0 specification.\n\nRomania monuments data is real data from [here](https://data.gov.ro/dataset/wiki-loves-monuments-ro-2012).\n\nSome useful links:\n- [The Swagger Hub Monuments link](https://app.swaggerhub.com/apis/CONTACT_213/monuments)\n- [The source API definition for the monuments](https://github.com/mihai1git/CRUDProcessor/blob/main/openapi/monuments_openapi.json)",
     "contact": {
       "email": "contact@mihaiadam.com"
     },
